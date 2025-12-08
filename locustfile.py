@@ -3,23 +3,22 @@ import time
 import uuid
 from locust import HttpUser, task, between
 
-# Configurações do alvo
-# No Render, você definirá o HOST na interface do Locust
+# endpoint que receberá os webhooks da Meta
 WEBHOOK_ENDPOINT = "/webhook" 
 
 class WhatsAppUser(HttpUser):
-    # Simula o tempo de digitação de uma pessoa real (entre 1 e 5 segundos)
+    # tempo que uma pessoa geralmente leva digitando (entre 1 e 5 segundos)
     wait_time = between(1, 5)
 
     def on_start(self):
         # Cada usuário simulado terá um número de telefone fixo durante a sessão
-        self.phone_number = f"55419{random.randint(10000000, 99999999)}"
+        self.phone_number = f"554198888{random.randint(100, 999)}"
         self.user_name = f"Paciente {random.randint(1, 1000)}"
 
     def _send_webhook(self, message_type, message_content):
-        """Gera o payload padrão da Meta e envia POST"""
+        """payload padrão da Meta e envia POST"""
         
-        # Estrutura exata do JSON da Meta
+        # JSON da Meta
         payload = {
             "object": "whatsapp_business_account",
             "entry": [{
@@ -48,7 +47,7 @@ class WhatsAppUser(HttpUser):
             }]
         }
 
-        # Envia o POST
+        # enviando o POST
         self.client.post(WEBHOOK_ENDPOINT, json=payload, headers={"User-Agent": "Facebook-Webhook"})
 
     @task(10) # Peso 10: Mensagens de texto são mais frequentes
