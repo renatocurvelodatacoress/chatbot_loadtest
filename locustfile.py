@@ -12,6 +12,7 @@ WEBHOOK_ENDPOINT = ""
 # --------------------
 # Ajustes de frequência (valores inteiros usados pelos decoradores @task)
 TEXT_WEIGHT = 10
+TEXT_WEIGHT_X = 1
 IMAGE_WEIGHT = 2
 AUDIO_WEIGHT = 1
 DOCUMENT_WEIGHT = 1
@@ -104,7 +105,7 @@ class WhatsAppUser(HttpUser):
             }]
         }
 
-    @task(TEXT_WEIGHT)
+    @task(TEXT_WEIGHT_X)
     def send_text(self):
         textos = [
             "Olá, gostaria de marcar consulta",
@@ -211,3 +212,57 @@ class WhatsAppUser(HttpUser):
             return
 
         self._post_payload(payload)
+
+    @task(TEXT_WEIGHT)
+    def send_medical_info(self):
+        # Lista de variações para testar o parser do backend
+        mensagens_triagem = [
+          "Tenho 1.80 e peso 110kg", 
+          "peso 110kg", 
+          "peso 110", 
+          "110", 
+          "Tenho 1.80",
+          "Tenho 180",
+          "1.80",
+          "180",
+          "180 por aí",
+          "Minha altura é 1,65 e peso 95 quilos",
+          "peso 130kg e meço 1.70",
+          "Altura 1.75, peso 120",
+          "Não sei meu peso exato, acho que uns 100", # Erro proposital
+          "Tenho 170cm e peso 85", # Formato diferente
+          "Peso: 150 / Altura: 1.60"
+        ]
+
+        # Simula um WA_ID aleatório para cada "paciente"
+        wa_id = f"55119{random.randint(10000000, 99999999)}"
+        
+        payload = {
+            "object": "whatsapp_business_account",
+            "entry": [{
+                "id": "109094005589991",
+                "changes": [{
+                    "value": {
+                        "messaging_product": "whatsapp",
+                        "metadata": {"display_phone_number": "5511999999999", "phone_number_id": "104070449268792"},
+                        "contacts": [{"profile": {"name": "Paciente Teste"}, "wa_id": wa_id}],
+                        "messages": [{
+                            "from": wa_id,
+                            "id": f"wamid.{uuid.uuid4()}",
+                            "timestamp": str(int(time.time())),
+                            "text": {"body": random.choice(mensagens_triagem)},
+                            "type": "text"
+                        }]
+                    },
+                    "field": "messages"
+                }]
+            }]
+        }
+
+        # Bate na raiz (/) conforme sua decisão de contornar a infra
+        headers = {
+            "Content-Type": "application/json",
+            "Wpp-Token": "SEU_TOKEN_AQUI" # Importante: manter o header que vimos no Postman
+        }
+        
+        self.client.post("/", json=payload, headers=headers)        
