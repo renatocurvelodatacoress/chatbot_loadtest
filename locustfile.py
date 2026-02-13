@@ -7,8 +7,8 @@ import json
 from locust import HttpUser, task, between
 
 # endpoint que receberá os webhooks da Meta
-WEBHOOK_ENDPOINT = "/webhook"
-
+#WEBHOOK_ENDPOINT = "/webhook"
+WEBHOOK_ENDPOINT = ""
 # --------------------
 # Ajustes de frequência (valores inteiros usados pelos decoradores @task)
 TEXT_WEIGHT = 10
